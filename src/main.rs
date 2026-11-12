@@ -10,9 +10,20 @@ mod tarpit;
 use std::{process::ExitCode, sync::Arc, time::Duration};
 use tokio::{net::TcpListener, sync::watch, time::Instant};
 
-#[tokio::main]
-async fn main() -> ExitCode {
-    match run().await {
+fn main() -> ExitCode {
+    let result = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .max_blocking_threads(4)
+        .enable_all()
+        .build()
+        .map_err(|_| "cannot initialize runtime")
+        .and_then(|runtime| {
+            let result = runtime.block_on(run());
+            // Cleanup already used the shutdown budget; DNS must not extend it.
+            runtime.shutdown_timeout(Duration::ZERO);
+            result
+        });
+    match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("tarssh-rs: {error}");
