@@ -1,0 +1,499 @@
+{
+  "__inputs": [
+    {
+      "name": "PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    },
+    {
+      "name": "LOKI",
+      "label": "Loki",
+      "type": "datasource",
+      "pluginId": "loki",
+      "pluginName": "Loki"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "name": "Grafana",
+      "version": "11.6.0"
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Active connections",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tarssh_connections_active{service_name=\"tarssh-rs\",deployment=${deployment:json}}"
+        }
+      ],
+      "links": [
+        {
+          "title": "Connection logs",
+          "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+          "targetBlank": false
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Accepted / rejected rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(tarssh_connections_accepted_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m])",
+          "legendFormat": "accepted"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(tarssh_connections_rejected_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m])",
+          "legendFormat": "rejected"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 9,
+        "x": 6,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "links": [
+        {
+          "title": "Connection logs",
+          "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Bytes / lines rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(tarssh_bytes_sent_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m])",
+          "legendFormat": "bytes"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(tarssh_lines_sent_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m])",
+          "legendFormat": "lines"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 9,
+        "x": 15,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "links": [
+        {
+          "title": "Connection logs",
+          "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Completed-session duration (open sessions excluded)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(tarssh_connection_duration_seconds_bucket{service_name=\"tarssh-rs\",deployment=${deployment:json}}[15m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(tarssh_connection_duration_seconds_bucket{service_name=\"tarssh-rs\",deployment=${deployment:json}}[15m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "links": [
+        {
+          "title": "Connection logs",
+          "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Disconnect reasons",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (reason) (rate(tarssh_connections_closed_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m]))",
+          "legendFormat": "{{reason}}"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "links": [
+        {
+          "title": "Connection logs",
+          "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Exporter queue / accepted / drops / failures",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tarssh_log_queue_events{service_name=\"tarssh-rs\",deployment=${deployment:json}}",
+          "legendFormat": "queue"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(tarssh_log_events_sent_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m])",
+          "legendFormat": "sent"
+        },
+        {
+          "refId": "C",
+          "expr": "sum by (reason) (rate(tarssh_log_events_dropped_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m]))",
+          "legendFormat": "dropped {{reason}}"
+        },
+        {
+          "refId": "D",
+          "expr": "sum by (reason) (rate(tarssh_log_push_failures_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m]))",
+          "legendFormat": "failure {{reason}}"
+        }
+      ],
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "links": [
+        {
+          "title": "Connection logs",
+          "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Accept errors",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(tarssh_accept_errors_total{service_name=\"tarssh-rs\",deployment=${deployment:json}}[5m])"
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "links": [
+        {
+          "title": "Connection logs",
+          "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "logs",
+      "title": "Connection open / close logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "${LOKI}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=\"tarssh-rs\",deployment=${deployment:json}} | json event=\"event\", peer_ip=\"peer_ip\", connection_id=\"connection_id\" | __error__=\"\" | event=~\"connection_(opened|closed)\" | label_format original_line=\"{{ __line__ }}\" | line_format \"{{.peer_ip}}\" |= ${peer_ip:json} | line_format \"{{.connection_id}}\" |= ${connection_id:json} | line_format \"{{.original_line}}\" | drop original_line"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "description": "Optional literal substring filters; empty matches all. Original JSON restored for display. Logs are best effort."
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Top peer IPs (bounded 15m lookback; query-time cardinality can be expensive)",
+      "datasource": {
+        "type": "loki",
+        "uid": "${LOKI}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (peer_ip) (count_over_time({service_name=\"tarssh-rs\",deployment=${deployment:json}} |~ `\"event\"\\s*:\\s*\"connection_opened\"` | json peer_ip=\"peer_ip\" | __error__=\"\" | peer_ip!=\"\" [15m])))",
+          "queryType": "instant"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "description": "15 minutes ending at selected range end; only peer_ip is extracted. topk bounds results, not intermediate cardinality; Loki max_query_series may reject large inputs. Text filters do not apply to this summary."
+    },
+    {
+      "id": 10,
+      "type": "logs",
+      "title": "Selected connection history",
+      "datasource": {
+        "type": "loki",
+        "uid": "${LOKI}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{service_name=\"tarssh-rs\",deployment=${deployment:json}} | json event=\"event\", peer_ip=\"peer_ip\", connection_id=\"connection_id\" | __error__=\"\" | event=~\"connection_(opened|closed)\" | connection_id=${connection_id:json} | label_format original_line=\"{{ __line__ }}\" | line_format \"{{.peer_ip}}\" |= ${peer_ip:json} | line_format \"{{.original_line}}\" | drop original_line"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "description": "Exact selected connection ID only; empty ID returns no connection events. Limited to dashboard time range."
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Completed-session duration buckets (cumulative; open excluded)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (le) (increase(tarssh_connection_duration_seconds_bucket{service_name=\"tarssh-rs\",deployment=${deployment:json}}[$__range]))",
+          "legendFormat": "<= {{le}} s"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "Connection logs",
+              "url": "/d/tarssh-rs?var-deployment=${deployment:percentencode}&from=${__from}&to=${__to}&viewPanel=8",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [
+    "tarssh",
+    "tarpit"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "deployment",
+        "label": "Deployment",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${PROMETHEUS}"
+        },
+        "query": "label_values(tarssh_connections_active{service_name=\"tarssh-rs\"}, deployment)",
+        "refresh": 1,
+        "includeAll": false,
+        "multi": false,
+        "current": {},
+        "options": []
+      },
+      {
+        "name": "peer_ip",
+        "label": "Peer IP (logs)",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "connection_id",
+        "label": "Connection ID (logs)",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "title": "tarssh-rs",
+  "uid": "tarssh-rs",
+  "version": 1
+}
