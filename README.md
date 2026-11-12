@@ -17,7 +17,7 @@ docker compose --env-file /dev/null up --build
 
 Compose runs one numeric non-root service with a read-only root filesystem, no capabilities, `no-new-privileges`, PID/memory/file-descriptor limits, a 15-second stop grace period, and Docker logging driver `none`. Metrics bind to host loopback by default. The tarpit port is the only public mapping; do not map host port 22 without first preserving administrative SSH on another port or address.
 
-The image is a Rust 1.91.0 multi-stage build with Debian CA certificates. Docker build is deferred until the service source is present in the coordinator's integrated tree.
+The image is a Rust 1.91.0 multi-stage build with Debian CA certificates. The integrated image has passed container hardening, tarpit, metrics, shutdown, and Alloy/Loki smoke checks.
 
 ## Configuration and local run
 
@@ -78,8 +78,9 @@ Merge `observability/prometheus/tarssh.yaml` into the existing `scrape_configs` 
 
 Use Grafana **Dashboards > New > Import**, upload
 `observability/grafana/tarssh-rs.json`, select existing Prometheus and Loki
-data sources, then import. Target: classic dashboard JSON on Grafana 11.6+;
-live minimum/current-version imports remain an integration check.
+data sources, then import. Target: classic dashboard JSON on Grafana 11.6+.
+Grafana 11.6.0 and 13.3.0 API imports, datasource queries, filters, history,
+and top-IP checks passed; browser-rendered UI remains unverified.
 
 The single deployment selector comes from `tarssh_connections_active`.
 Queries use exact JSON-quoted scalar literals rather than interpolated
