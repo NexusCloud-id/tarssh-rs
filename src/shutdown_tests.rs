@@ -80,6 +80,22 @@ async fn premature_http_inner_error_fails() {
 }
 
 #[tokio::test(start_paused = true)]
+async fn subsystem_completion_wins_over_ready_signal() {
+    let (stop, _shutdown) = watch::channel(None);
+    let (events, _rx) = Logs::channel(Metrics::new("edge-1").unwrap(), "edge-1".into());
+    let status = crate::supervise(
+        tokio::spawn(async {}),
+        tokio::spawn(std::future::pending()),
+        tokio::spawn(std::future::pending()),
+        stop,
+        events,
+        async {},
+    )
+    .await;
+    assert_eq!(status, std::process::ExitCode::FAILURE);
+}
+
+#[tokio::test(start_paused = true)]
 async fn requested_signal_closes_sessions_before_exporter_and_succeeds() {
     let (stop, mut shutdown) = watch::channel(None);
     let (events, mut rx) = Logs::channel(Metrics::new("edge-1").unwrap(), "edge-1".into());

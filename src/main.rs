@@ -18,7 +18,11 @@ fn main() -> ExitCode {
         .build()
         .map_err(|_| "cannot initialize runtime")
         .and_then(|runtime| {
+            let original_hook = std::panic::take_hook();
+            std::panic::set_hook(Box::new(|_| {}));
             let result = runtime.block_on(run());
+            let _ = std::panic::take_hook();
+            std::panic::set_hook(original_hook);
             // Cleanup already used the shutdown budget; DNS must not extend it.
             runtime.shutdown_timeout(Duration::ZERO);
             result
@@ -51,8 +55,6 @@ async fn run() -> Result<ExitCode, &'static str> {
     let metrics_listener = TcpListener::bind(config.metrics)
         .await
         .map_err(|_| "cannot bind TARSSH_METRICS_ADDR")?;
-    // Supervision observes task panics; runtime failures must stay silent.
-    std::panic::set_hook(Box::new(|_| {}));
     let (stop, shutdown) = watch::channel(None);
     let (logs, rx) = logs::Logs::channel(metrics.clone(), config.deployment.clone());
     logs.event("service_started", serde_json::json!({}));
@@ -100,27 +102,41 @@ async fn supervise(
     logs: logs::Logs,
     signal: impl std::future::Future<Output = ()>,
 ) -> ExitCode {
+    enum CompletionCause {
+        Clean,
+        HttpInnerError,
+        JoinError,
+    }
     let mut connections_finished = false;
     let mut http_finished = false;
     let mut exporter_finished = false;
     // Runtime failures stay off stdout/stderr and trigger bounded cleanup.
-    let requested = tokio::select! {
-        _ = signal => true,
+    tokio::task::yield_now().await;
+    let cause = tokio::select! {
+        biased;
         result = &mut connections => {
             connections_finished = true;
-            let _ = result;
-            false
+            Some(match result {
+                Ok(()) => CompletionCause::Clean,
+                Err(_) => CompletionCause::JoinError,
+            })
         },
         result = &mut http => {
             http_finished = true;
-            let _ = result;
-            false
+            Some(match result {
+                Ok(Ok(())) => CompletionCause::Clean,
+                Ok(Err(_)) => CompletionCause::HttpInnerError,
+                Err(_) => CompletionCause::JoinError,
+            })
         },
         result = &mut exporter => {
             exporter_finished = true;
-            let _ = result;
-            false
+            Some(match result {
+                Ok(()) => CompletionCause::Clean,
+                Err(_) => CompletionCause::JoinError,
+            })
         },
+        _ = signal => None,
     };
     let end = Instant::now() + Duration::from_secs(10);
     logs.event("service_stopping", serde_json::json!({}));
@@ -142,9 +158,9 @@ async fn supervise(
         exporter.abort();
         let _ = exporter.await;
     }
-    if requested {
-        ExitCode::SUCCESS
-    } else {
+    if cause.is_some() {
         ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
     }
 }
