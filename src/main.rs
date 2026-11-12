@@ -24,7 +24,7 @@ fn main() -> ExitCode {
             result
         });
     match result {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(status) => status,
         Err(error) => {
             eprintln!("tarssh-rs: {error}");
             ExitCode::FAILURE
@@ -32,7 +32,7 @@ fn main() -> ExitCode {
     }
 }
 
-async fn run() -> Result<(), &'static str> {
+async fn run() -> Result<ExitCode, &'static str> {
     let config = Arc::new(config::Config::parse(|key| {
         std::env::var_os(key).map(|v| v.into_string().unwrap_or_else(|_| "\u{fffd}".into()))
     })?);
@@ -51,10 +51,12 @@ async fn run() -> Result<(), &'static str> {
     let metrics_listener = TcpListener::bind(config.metrics)
         .await
         .map_err(|_| "cannot bind TARSSH_METRICS_ADDR")?;
+    // Supervision observes task panics; runtime failures must stay silent.
+    std::panic::set_hook(Box::new(|_| {}));
     let (stop, shutdown) = watch::channel(None);
     let (logs, rx) = logs::Logs::channel(metrics.clone(), config.deployment.clone());
     logs.event("service_started", serde_json::json!({}));
-    let mut exporter = tokio::spawn(logs::export(
+    let exporter = tokio::spawn(logs::export(
         rx,
         metrics.clone(),
         config.deployment.clone(),
@@ -62,7 +64,7 @@ async fn run() -> Result<(), &'static str> {
         client,
         shutdown.clone(),
     ));
-    let mut connections = tokio::spawn(tarpit::serve(
+    let connections = tokio::spawn(tarpit::serve(
         listener,
         config,
         metrics.clone(),
@@ -70,7 +72,7 @@ async fn run() -> Result<(), &'static str> {
         shutdown.clone(),
     ));
     let mut metrics_shutdown = shutdown;
-    let mut http = tokio::spawn(async move {
+    let http = tokio::spawn(async move {
         axum::serve(metrics_listener, metrics.router())
             .with_graceful_shutdown(async move {
                 if metrics_shutdown.borrow().is_none() {
@@ -79,9 +81,6 @@ async fn run() -> Result<(), &'static str> {
             })
             .await
     });
-    let mut connections_finished = false;
-    let mut http_finished = false;
-    let mut exporter_finished = false;
     let signal = async {
         #[cfg(unix)]
         tokio::select! { _ = terminate.recv() => {}, _ = interrupt.recv() => {} }
@@ -90,13 +89,39 @@ async fn run() -> Result<(), &'static str> {
             let _ = tokio::signal::ctrl_c().await;
         }
     };
+    Ok(supervise(connections, http, exporter, stop, logs, signal).await)
+}
+
+async fn supervise(
+    mut connections: tokio::task::JoinHandle<()>,
+    mut http: tokio::task::JoinHandle<std::io::Result<()>>,
+    mut exporter: tokio::task::JoinHandle<()>,
+    stop: watch::Sender<Option<Instant>>,
+    logs: logs::Logs,
+    signal: impl std::future::Future<Output = ()>,
+) -> ExitCode {
+    let mut connections_finished = false;
+    let mut http_finished = false;
+    let mut exporter_finished = false;
     // Runtime failures stay off stdout/stderr and trigger bounded cleanup.
-    tokio::select! {
-        _ = signal => {},
-        _ = &mut connections => connections_finished = true,
-        _ = &mut http => http_finished = true,
-        _ = &mut exporter => exporter_finished = true,
-    }
+    let requested = tokio::select! {
+        _ = signal => true,
+        result = &mut connections => {
+            connections_finished = true;
+            let _ = result;
+            false
+        },
+        result = &mut http => {
+            http_finished = true;
+            let _ = result;
+            false
+        },
+        result = &mut exporter => {
+            exporter_finished = true;
+            let _ = result;
+            false
+        },
+    };
     let end = Instant::now() + Duration::from_secs(10);
     logs.event("service_stopping", serde_json::json!({}));
     let _ = stop.send(Some(end));
@@ -117,5 +142,9 @@ async fn run() -> Result<(), &'static str> {
         exporter.abort();
         let _ = exporter.await;
     }
-    Ok(())
+    if requested {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
