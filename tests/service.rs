@@ -67,6 +67,7 @@ fn binary_serves_metrics_and_tarpit_despite_collector_outage() {
     let metrics = free_addr();
     let unreachable = free_addr();
     let child = command()
+        .env("TOKIO_WORKER_THREADS", "128")
         .env("TARSSH_LISTEN_ADDR", listen.to_string())
         .env("TARSSH_METRICS_ADDR", metrics.to_string())
         .env("TARSSH_DELAY_MS", "50")
@@ -78,6 +79,13 @@ fn binary_serves_metrics_and_tarpit_despite_collector_outage() {
         .unwrap();
     let mut process = Running(child);
     let mut peer = connect(listen);
+    #[cfg(target_os = "linux")]
+    {
+        let threads = std::fs::read_dir(format!("/proc/{}/task", process.0.id()))
+            .unwrap()
+            .count();
+        assert!(threads <= 7, "runtime spawned {threads} threads");
+    }
     peer.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
     let mut line = [0; 255];
     let n = peer.read(&mut line).unwrap();
