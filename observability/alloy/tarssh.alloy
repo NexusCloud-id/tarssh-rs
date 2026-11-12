@@ -1,0 +1,15 @@
+// Add to the existing Alloy config. Replace BOTH placeholders before validation.
+// PRIVATE_BRIDGE_IP must match host.docker.internal as seen from the container.
+loki.source.api "tarssh" {
+  http {
+    listen_address = "PRIVATE_BRIDGE_IP"
+    listen_port = 9999
+  }
+  grpc {
+    // Keep the auxiliary gRPC listener off the host bridge and public interfaces.
+    listen_address = "127.0.0.1"
+    listen_port = 0
+  }
+  use_incoming_timestamp = true
+  forward_to = [loki.write.EXISTING_WRITER.receiver]
+}

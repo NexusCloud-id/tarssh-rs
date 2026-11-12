@@ -1,0 +1,31 @@
+services:
+  tarssh:
+    build: .
+    image: tarssh-rs:local
+    user: "65532:65532"
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    pids_limit: 64
+    mem_limit: 256m
+    ulimits:
+      nofile:
+        soft: 16384
+        hard: 16384
+    stop_grace_period: 15s
+    logging:
+      driver: none
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${TARSSH_HOST_PORT:-2222}:2222"
+      - "127.0.0.1:${TARSSH_METRICS_HOST_PORT:-9000}:9000"
+    environment:
+      TARSSH_LISTEN_ADDR: "0.0.0.0:2222"
+      TARSSH_METRICS_ADDR: "0.0.0.0:9000"
+      TARSSH_DELAY_MS: "${TARSSH_DELAY_MS:-10000}"
+      TARSSH_MAX_LINE_LENGTH: "${TARSSH_MAX_LINE_LENGTH:-32}"
+      TARSSH_MAX_CONNECTIONS: "${TARSSH_MAX_CONNECTIONS:-4096}"
+      TARSSH_WRITE_TIMEOUT_MS: "${TARSSH_WRITE_TIMEOUT_MS:-5000}"
+      TARSSH_ALLOY_URL: "${TARSSH_ALLOY_URL:?Set the full private Alloy push URL}"
+      TARSSH_DEPLOYMENT: "${TARSSH_DEPLOYMENT:?Set a unique deployment ID}"
