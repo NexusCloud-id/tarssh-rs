@@ -66,13 +66,15 @@ for required in ("read_only: true", "no-new-privileges", "cap_drop: [ALL]",
     assert required in compose, required
 print("asset contract: OK")
 env = dict(os.environ, TARSSH_DEPLOYMENT="asset-check",
-           TARSSH_ALLOY_URL="http://host.docker.internal:9999/loki/api/v1/push")
+           TARSSH_ALLOY_URL="http://host.docker.internal:9999/loki/api/v1/push",
+           TARSSH_IMAGE="tarssh-rs:local")
 result = subprocess.run(
     ["docker", "compose", "--env-file", "/dev/null", "config", "--format", "json"],
     cwd=ROOT, env=env, check=True, capture_output=True, text=True)
 services = json.loads(result.stdout)["services"]
 assert set(services) == {"tarssh"}
 service = services["tarssh"]
+assert service["image"] == "tarssh-rs:local"
 assert service["user"] == "65532:65532" and service["read_only"]
 assert service["cap_drop"] == ["ALL"]
 assert "no-new-privileges:true" in service["security_opt"]
@@ -82,5 +84,22 @@ assert service["stop_grace_period"] == "15s"
 assert service["ulimits"]["nofile"]["soft"] >= 4096 + 1024
 assert not service.get("volumes") and not service.get("privileged")
 assert any(p["target"] == 9000 and p["host_ip"] == "127.0.0.1"
-           for p in service["ports"])
+            for p in service["ports"])
+digest = "ghcr.io/nexuscloud-id/tarssh-rs@sha256:" + "a" * 64
+override = subprocess.run(
+    ["docker", "compose", "--env-file", "/dev/null", "config", "--format", "json"],
+    cwd=ROOT, env=dict(env, TARSSH_IMAGE=digest), check=True,
+    capture_output=True, text=True)
+override_service = json.loads(override.stdout)["services"]["tarssh"]
+assert override_service["image"] == digest
+assert override_service["user"] == "65532:65532" and override_service["read_only"]
+assert override_service["cap_drop"] == ["ALL"]
+assert "no-new-privileges:true" in override_service["security_opt"]
+assert override_service["logging"]["driver"] == "none"
+assert override_service["pids_limit"] > 0 and override_service["mem_limit"]
+assert override_service["stop_grace_period"] == "15s"
+assert override_service["ulimits"]["nofile"]["soft"] >= 4096 + 1024
+assert not override_service.get("volumes") and not override_service.get("privileged")
+assert any(p["target"] == 9000 and p["host_ip"] == "127.0.0.1"
+           for p in override_service["ports"])
 print("Compose schema and hardening: OK")
