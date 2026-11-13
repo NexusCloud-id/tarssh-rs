@@ -1,7 +1,7 @@
 services:
   tarssh:
     build: .
-    image: tarssh-rs:local
+    image: "${TARSSH_IMAGE:-tarssh-rs:local}"
     user: "65532:65532"
     read_only: true
     security_opt: ["no-new-privileges:true"]

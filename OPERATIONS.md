@@ -9,13 +9,13 @@
 5. Validate Compose before starting:
 
    ```sh
-   docker compose --env-file /dev/null config --quiet
+   TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null config --quiet
    ```
 
 6. Start the service:
 
    ```sh
-   docker compose --env-file /dev/null up -d --build
+   TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null up -d --build
    ```
 
 7. Merge the Prometheus scrape job and import the Grafana dashboard.
@@ -38,7 +38,8 @@ makes host-level diagnosis unreliable.
 - Check rejected connections, accept errors, queue drops, and push failures.
 - Check Alloy and Loki health separately from tarpit availability.
 - Keep the deployed source revision recorded with the host change. For a
-  published image, record and deploy its immutable `@sha256:...` digest.
+  published image, record and deploy its immutable `@sha256:...` digest via
+  `TARSSH_IMAGE`.
 
 Logs are best effort. A successful push means Alloy accepted the batch; it does
 not prove Loki has stored every event.
@@ -51,7 +52,13 @@ not prove Loki has stored every event.
 4. Rebuild and restart the service:
 
    ```sh
-   docker compose --env-file /dev/null up -d --build
+   TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null up -d --build
+   ```
+
+   For a published image, set `TARSSH_IMAGE` to its immutable digest and use:
+
+   ```sh
+   docker compose --env-file /dev/null up -d --no-build --pull always
    ```
 
 5. Verify metrics, connections, and delivery counters.
@@ -60,15 +67,21 @@ not prove Loki has stored every event.
 ## Roll back
 
 1. Stop or redeploy only the tarpit service.
-2. Restore the previous source revision.
-3. Rebuild and start the service:
+2. For a source deployment, restore the previous source revision, then rebuild
+   and start the service:
 
    ```sh
-   docker compose --env-file /dev/null up -d --build
+   TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null up -d --build
    ```
 
+3. For an image deployment, restore the previous immutable `TARSSH_IMAGE`
+   digest, then run:
+
+   ```sh
+   docker compose --env-file /dev/null up -d --no-build --pull always
+   ```
 4. Verify `/metrics`, connection handling, and Alloy delivery.
-5. Record the failed source revision and evidence in an issue without posting secrets,
+5. Record the failed source revision or image digest and evidence in an issue without posting secrets,
    client payloads, private endpoints, or personal data.
 
 ## Incident handling

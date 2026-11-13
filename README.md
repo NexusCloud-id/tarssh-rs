@@ -24,8 +24,8 @@ export TARSSH_ALLOY_URL=http://host.docker.internal:9999/loki/api/v1/push
 export TARSSH_DEPLOYMENT=edge-1
 # Optional: TARSSH_HOST_PORT=2222 TARSSH_METRICS_HOST_PORT=9000
 
-docker compose --env-file /dev/null config --quiet
-docker compose --env-file /dev/null up --build
+TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null config --quiet
+TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null up --build
 ```
 
 Compose runs one numeric non-root service with a read-only root filesystem, no
@@ -50,8 +50,13 @@ release, replace the tag in your deployment reference with its digest:
 docker pull ghcr.io/nexuscloud-id/tarssh-rs:v0.1.0
 docker image inspect --format '{{index .RepoDigests 0}}' \
   ghcr.io/nexuscloud-id/tarssh-rs:v0.1.0
-# Use the returned ghcr.io/nexuscloud-id/tarssh-rs@sha256:... reference.
+# Use returned ghcr.io/nexuscloud-id/tarssh-rs@sha256:... reference.
+export TARSSH_IMAGE=ghcr.io/nexuscloud-id/tarssh-rs@sha256:...
+docker compose --env-file /dev/null up -d --no-build --pull always
 ```
+
+`TARSSH_IMAGE` should be an immutable GHCR `@sha256:...` reference. The same
+Compose file retains the local `tarssh-rs:local` default and all hardening.
 
 Releases carry provenance and SBOM attestations. The workflow accepts only tags
 matching `vMAJOR.MINOR.PATCH`; it does not publish `latest`. Release tags must
