@@ -21,8 +21,6 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
       - name: Install Rust
         uses: dtolnay/rust-toolchain@f00cc37de62c899691b45db1cc585604520c95a7
-        with:
-          toolchain: 1.91.0
       - name: Initialize CodeQL
         uses: github/codeql-action/init@0f47cf5ea395a08f5ca3b81a506c66a63ecb648a
         with:
