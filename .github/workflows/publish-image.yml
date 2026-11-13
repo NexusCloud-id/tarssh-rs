@@ -19,6 +19,7 @@ jobs:
   publish:
     runs-on: ubuntu-24.04
     permissions:
+      artifact-metadata: write
       contents: read
       packages: write
       attestations: write
@@ -52,7 +53,6 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@f00cc37de62c899691b45db1cc585604520c95a7
         with:
-          toolchain: 1.91.0
           components: rustfmt, clippy
 
       - name: Format
