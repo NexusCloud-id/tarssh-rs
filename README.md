@@ -14,10 +14,11 @@ networks, or write application log files.
 ## Run with Compose
 
 See [OPERATIONS.md](OPERATIONS.md) for deployment, upgrade, rollback, and
-routine operational checks.
+routine checks.
 
-Requires Docker Engine and Compose v2. Set required values in the shell, not a
-committed `.env` file. Use a different deployment ID on every host or process.
+Requires Docker Engine and Compose v2. Set required values in the shell; do not
+commit them in a `.env` file. Use a different deployment ID on each host or
+process.
 
 ```sh
 export TARSSH_ALLOY_URL=http://host.docker.internal:9999/loki/api/v1/push
@@ -31,8 +32,8 @@ TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null up --build
 Compose runs one numeric non-root service with a read-only root filesystem, no
 Linux capabilities, `no-new-privileges`, PID/memory/file-descriptor limits, a
 15-second stop grace period, and Docker logging driver `none`. Metrics bind to
-host loopback by default. Do not map the tarpit to port 22 without first
-preserving administrative SSH on another port or address.
+host loopback by default. Preserve administrative SSH on another port or
+address before mapping the tarpit to port 22.
 
 ## Published image
 
@@ -43,8 +44,8 @@ docker pull ghcr.io/nexuscloud-id/tarssh-rs:v0.1.0
 docker image inspect ghcr.io/nexuscloud-id/tarssh-rs:v0.1.0
 ```
 
-Use an image digest for deployment when reproducibility matters. After a
-release, replace the tag in your deployment reference with its digest:
+For reproducible deployments, use an image digest. After a release, replace
+the tag in the deployment reference with its digest:
 
 ```sh
 docker pull ghcr.io/nexuscloud-id/tarssh-rs:v0.1.0
@@ -55,8 +56,8 @@ export TARSSH_IMAGE=ghcr.io/nexuscloud-id/tarssh-rs@sha256:...
 docker compose --env-file /dev/null up -d --no-build --pull always
 ```
 
-`TARSSH_IMAGE` should be an immutable GHCR `@sha256:...` reference. The same
-Compose file retains the local `tarssh-rs:local` default and all hardening.
+Set `TARSSH_IMAGE` to an immutable GHCR `@sha256:...` reference. The same
+Compose file keeps the local `tarssh-rs:local` default and all hardening.
 
 Releases carry provenance and SBOM attestations. The workflow accepts only tags
 matching `vMAJOR.MINOR.PATCH`; it does not publish `latest`. Release tags must
@@ -87,25 +88,25 @@ TARSSH_ALLOY_URL=http://127.0.0.1:9999/loki/api/v1/push \
 TARSSH_DEPLOYMENT=local-1 ./target/release/tarssh-rs
 ```
 
-The first random ASCII CRLF line follows the full delay; each subsequent line
-follows another full delay. Increasing the connection cap requires reviewing
-memory and descriptor limits; the shipped descriptor limit supports the
-Compose default cap, not `65536`.
+The first random ASCII CRLF line follows the full delay. Each later line follows
+another full delay. Before increasing the connection cap, review memory and
+descriptor limits. The shipped descriptor limit supports the Compose default,
+not `65536`.
 
 ### Delivery limits
 
-The in-memory queue holds 4096 events and drops the newest when full. A single
-worker flushes at one second or 128 events, with at most 256 KiB of event JSON
-per batch; events over 2 KiB are dropped. No durable spool or application log
-file exists. Only `service_name` and `deployment` are Loki stream labels; peer
-IP and connection ID remain JSON fields.
+The in-memory queue holds 4096 events and drops the newest when full. One
+worker flushes after one second or at 128 events, with at most 256 KiB of event
+JSON per batch. Events over 2 KiB are dropped. There is no durable spool or
+application log file. Only `service_name` and `deployment` are Loki stream
+labels; peer IP and connection ID remain JSON fields.
 
-Each request has a one-second connect timeout and two-second attempt timeout.
+Each request has a one-second connect timeout and a two-second attempt timeout.
 Transport failures, 408, 429, and 5xx retry up to three total attempts, with
 250 ms then one-second backoff within a hard batch deadline. Other responses
 fail immediately; only 200/204 mean Alloy accepted the batch, not Loki
 durability. Redirects, system proxies, and hidden HTTP retries are disabled.
-Queue/batch drops and failures are metrics, not recursive logs. Retries after
+Queue and batch drops and failures are metrics, not recursive logs. Retries after
 an accepted timeout can duplicate entries. Crashes lose the queue. Shutdown
 drains within ten seconds; final losses may disappear before Prometheus
 scrapes them.
@@ -120,11 +121,10 @@ container/network; never expose unauthenticated ingestion publicly. The
 auxiliary gRPC listener is explicitly bound to `127.0.0.1` on port `0`.
 
 A host-installed Alloy listener bound only to `127.0.0.1` cannot receive bridge
-traffic. If Alloy runs in a container, use its private shared-network
-address/service name instead. Plain HTTP is suitable only for the same-host
-private link; use verified TLS across a trust boundary. Receiver outages lose
-best-effort queued events; retries can duplicate after an accepted request
-timeout.
+traffic. If Alloy runs in a container, use its private shared-network address
+or service name. Plain HTTP is suitable only for the same-host private link;
+use verified TLS across a trust boundary. Receiver outages lose best-effort
+queued events, and retries can duplicate after an accepted request timeout.
 
 ## Prometheus and Grafana
 
@@ -137,7 +137,7 @@ Use Grafana **Dashboards > New > Import**, upload
 `observability/grafana/tarssh-rs.json`, select existing Prometheus and Loki data
 sources, then import. Target: classic dashboard JSON on Grafana 11.6+.
 
-The single deployment selector comes from
+The deployment selector comes from
 `tarssh_connections_active`. Queries use exact JSON-quoted scalar literals
 rather than interpolated regular expressions. Optional peer-IP and
 connection-ID fields are literal substring filters on general connection logs;
@@ -146,11 +146,11 @@ blank returns no connection events. IP filtering also applies there. Metrics
 data links preserve deployment/time and open the connection log panel. Text
 filters never affect metrics or the top-IP summary.
 
-Logs are best effort and can differ from Prometheus counters. Source IP
+Logs are best effort, so they can differ from Prometheus counters. Source IP
 reflects the socket peer; NAT, proxies, or rootless networking can change it.
 No forwarded address is trusted. Top peer IPs count opened events in the 15
 minutes ending at the selected range end, extracting only `peer_ip` and
-applying `topk(10)` at query time. This limits output, not intermediate series:
+applying `topk(10)` at query time. This limits output, not intermediate series.
 Loki's `max_query_series` can still reject many-IP inputs. Narrow
 deployment/time or use raw logs if that happens; do not index peer IPs.
 
@@ -158,19 +158,19 @@ deployment/time or use raw logs if that happens; do not index peer IPs.
 
 Run `python3 scripts/check-assets.py` and
 `docker compose --env-file /dev/null config --quiet` with required variables
-set. The Python check uses only the standard library plus the Compose CLI; it
-checks JSON/query contracts and normalized Compose hardening, not live
-PromQL/LogQL execution. Alloy, Grafana, and `promtool` are not bundled. After
+set. The Python check uses only the standard library and the Compose CLI. It checks
+JSON/query contracts and normalized Compose hardening, not live PromQL/LogQL
+execution. Alloy, Grafana, and `promtool` are not bundled. After
 substitution, validate the complete existing Alloy config with `alloy validate`
 and Prometheus config with `promtool check config` before reload.
 
-Docker logging `none` means `docker logs` cannot diagnose startup. Run the
-binary locally in the foreground using the shell example to see its single
-redacted stderr diagnostic; runtime logging remains Alloy-only. An Alloy
+With Docker logging set to `none`, `docker logs` cannot diagnose startup. Run
+the binary locally in the foreground with the shell example to see its single
+redacted stderr diagnostic. Runtime logging remains Alloy-only. An Alloy
 outage alone must not prevent startup. Check `/metrics` and exporter
 failure/drop rates, not Docker logs.
 
-Stop only this service with `docker compose --env-file /dev/null down`. Restore
+Stop this service with `docker compose --env-file /dev/null down`. Restore
 the previous source revision, then rebuild with `--build`. Restore the previous
 dashboard and remove only the additive scrape job/receiver if needed; validate
 existing configs before reloading. No data migration exists. Do not alter

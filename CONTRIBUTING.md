@@ -28,7 +28,7 @@ queues, outbound scanning, application log files, or unbounded labels.
 
 Explain the behavior change and its operational impact. Include tests and
 validation commands. Update the README or observability assets when their
-contracts change. Keep commits focused and avoid unrelated formatting.
+contracts change. Keep commits focused; avoid unrelated formatting.
 
-A pull request should pass formatting, clippy, tests, release build, asset
-checks, and Compose validation before review.
+Before review, a pull request should pass formatting, clippy, tests, release
+build, asset checks, and Compose validation.

@@ -3,11 +3,11 @@
 ## Scope
 
 This policy covers the `tarssh-rs` source tree, container image, Compose file,
-and observability assets published in this repository.
+and observability assets in this repository.
 
-`tarssh-rs` is a deliberately exposed tarpit. It is not an SSH server. Do not
-use it for authentication, administration, credential collection, payload
-storage, or network scanning.
+`tarssh-rs` is a deliberately exposed tarpit, not an SSH server. Do not use it
+for authentication, administration, credential collection, payload storage, or
+network scanning.
 
 ## Reporting a vulnerability
 
@@ -21,15 +21,14 @@ Do not open a public issue for a vulnerability. Use GitHub's private
 
 Do not include credentials, client payloads, or personal data in a report.
 
-Reports receive an acknowledgement when reviewed. Disclosure timing is
+Reports receive an acknowledgement after review. Disclosure timing is
 coordinated with the reporter and depends on severity and available fixes.
 
 ## Deployment reports
 
 For configuration mistakes or ordinary bugs, open a GitHub issue. Remove
-secrets and client data before posting logs. The service intentionally keeps
-application logs out of Docker and sends only bounded, best-effort events to
-Alloy.
+secrets and client data before posting logs. The service keeps application logs
+out of Docker and sends only bounded, best-effort events to Alloy.
 
 ## Supported releases
 
