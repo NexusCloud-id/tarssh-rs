@@ -1,6 +1,6 @@
 ## Change
 
-<!-- What changed? Why? -->
+<!-- What changed, and why? -->
 
 ## Validation
 

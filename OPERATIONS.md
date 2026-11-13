@@ -18,19 +18,18 @@
    TARSSH_IMAGE=tarssh-rs:local docker compose --env-file /dev/null up -d --build
    ```
 
-7. Merge the Prometheus scrape job and import the Grafana dashboard.
-8. Confirm `/metrics`, connection limits, and Alloy delivery counters.
+7. Merge the Prometheus scrape job. Import the Grafana dashboard.
+8. Confirm `/metrics`, the connection limit, and Alloy delivery counters.
 
 Keep the metrics port on loopback or a private network. Restrict Alloy's HTTP
 receiver to the intended network. Use verified TLS across a trust boundary.
-Do not map the tarpit to port 22 while administrative SSH still needs that
-port.
+Do not map the tarpit to port 22 while administrative SSH needs it.
 
 ## Multiple hosts
 
 Give each host a stable deployment ID, for example `prod-ams-01` and
-`prod-fra-01`. Reusing one ID joins metrics and logs from different hosts and
-makes host-level diagnosis unreliable.
+`prod-fra-01`. Reusing one ID joins metrics and logs from different hosts, which
+prevents reliable host-level diagnosis.
 
 ## Routine checks
 
@@ -42,7 +41,7 @@ makes host-level diagnosis unreliable.
   `TARSSH_IMAGE`.
 
 Logs are best effort. A successful push means Alloy accepted the batch; it does
-not prove Loki has stored every event.
+not prove that Loki stored every event.
 
 ## Upgrade
 
