@@ -1,1 +1,5 @@
 /target/
+/.repowise/
+.env
+.env.*
+!.env.example
