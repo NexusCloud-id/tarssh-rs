@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a bounded project improvement
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What operational problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the smallest useful change.
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Limits and trade-offs
+      description: Address resource bounds, privacy, security, and observability.
+    validations:
+      required: true

@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible project bug
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Remove credentials, client payloads, private URLs, and personal data.
+  - type: input
+    id: version
+    attributes:
+      label: Version or image digest
+      placeholder: v0.1.0 or sha256:...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, Docker/Compose versions, deployment shape.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Commands and minimal steps. Do not include client payloads.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
